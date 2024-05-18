@@ -112,6 +112,24 @@ exports.login = function (req, res) {
 }
 
 
+
+exports.profile = async (req, res) => {
+    const id_organization = req.decoded.id_organization
+    const qProfile = "SELECT id_organization,organization_name,email,phone,logo,ktp,legality_letter,status FROM organizations WHERE id_organization=?"
+    connection.query(qProfile, id_organization,
+        function (error, rows, result) {
+            if (error) {
+                console.log(error);
+                res.status(500).json({ status: 500, message: "Internal Server Error" });
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    )
+}
+
+
+
 exports.register = async (req, res) => {
     upload(req, res, function (err) {
         if (err instanceof multer.MulterError) {
@@ -174,22 +192,76 @@ exports.register = async (req, res) => {
 };
 
 
-exports.profile = async (req, res) => {
-    const id_organization = req.decoded.id_organization
-    const qProfile = "SELECT `id_organization`, `organization_name`, `email`, `phone`, `logo`, `ktp`, `legality_letter`, `status` FROM `organizations` WHERE id_organization=?"
-    console.log("aa" + id_organization)
-    connection.query(qProfile, id_organization,
-        function (error, rows, result) {
-            if (error) {
-                console.log(error);
-                res.status(500).json({ status: 500, message: "Internal Server Error" });
+exports.editProfile = async (req, res) => {
+    upload(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: 'Failed to upload image.' });
+        } else if (err) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: 'An unexpected error occurred.' });
+        } else {
+            const id_organization = req.decoded.id_organization;
+            const { organization_name, email, phone } = req.body;
+            const logo = req.files['logo'] ? `${req.files['logo'][0].filename}` : null;
+
+            if (!organization_name || !email || !phone) {
+                return res.status(400).json({ status: 400, message: "Field can't be blank" });
             } else {
-                res.status(200).json(rows);
+                connection.query(`SELECT email, logo FROM organizations WHERE id_organization=?`, id_organization,
+                    function (error, r) {
+                        if (error) {
+                            console.log(error);
+                            if (logo) fs.unlinkSync(logo);
+                            return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                        } else {
+                            const currentEmail = r[0].email;
+                            const currentLogo = r[0].logo;
+
+                            const updateProfile = async () => {
+                                let qEditProfile, vEditProfile;
+                                if (email === currentEmail) {
+                                    qEditProfile = `UPDATE organizations SET organization_name=?, phone=? ${logo ? ',logo=?' : ''} WHERE id_organization=?`;
+                                    vEditProfile = logo ? [organization_name, phone, logo, id_organization] : [organization_name, phone, id_organization];
+                                } else {
+                                    qEditProfile = `UPDATE organizations SET organization_name=?, email=?, phone=? ${logo ? ',logo=?' : ''} WHERE id_organization=?`;
+                                    vEditProfile = logo ? [organization_name, email, phone, logo, id_organization] : [organization_name, email, phone, id_organization];
+                                }
+
+                                connection.query(qEditProfile, vEditProfile, function (error) {
+                                    if (error) {
+                                        console.log(error);
+                                        if (logo) fs.unlinkSync(logo);
+                                        return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                                    } else {
+                                        if (logo && currentLogo) fs.unlinkSync(`images/logo/` + currentLogo);
+                                        return res.status(200).json({ status: 200, message: "Update profile successfully" });
+                                    }
+                                });
+                            };
+
+                            if (email === currentEmail) {
+                                updateProfile();
+                            } else {
+                                connection.query(`SELECT * FROM organizations WHERE email=? AND NOT email=?`, [email, currentEmail],
+                                    function (error, rows) {
+                                        if (error) {
+                                            console.log(error);
+                                            if (logo) fs.unlinkSync(logo);
+                                            return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                                        } else {
+                                            if (rows.length) {
+                                                if (logo) fs.unlinkSync(logo);
+                                                return res.status(401).json({ status: 401, message: `Email ${email} already exists` });
+                                            } else {
+                                                updateProfile();
+                                            }
+                                        }
+                                    });
+                            }
+                        }
+                    });
             }
         }
-    )
-}
-
-exports.editProfile = async (req, res) => {
-    const qUpdateProfile = `UPDATE organizations SET organization`
-}
+    });
+};
