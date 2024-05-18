@@ -291,12 +291,11 @@ exports.eventDelete = async (req, res) => {
     const id_organization = req.decoded.id_organization
     const id_event = req.params.id_event
     const qEventDelete = `DELETE FROM events WHERE id_event=? AND id_organization=?`
-    const x = connection.query(qEventDelete, [id_event, id_organization], async (error, rows, result) => {
+    connection.query(qEventDelete, [id_event, id_organization], async (error, rows, result) => {
         if (error) {
             console.log(error);
             return res.status(500).json({ status: 500, message: "Internal Server Error" });
-        } else {
-            console.log(x)
+        } else {            
             return res.status(200).json({ status: 200, message: "Event has been deleted!" });
         }
     })
