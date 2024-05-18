@@ -18,10 +18,10 @@ function verifikasiUser(req, res, next) {
         const currentTime = Math.floor(Date.now() / 1000); // Waktu saat ini dalam detik
         if (decoded.exp && decoded.exp < currentTime) {
           return res.status(401).send({ auth: false, message: "Token telah kadaluarsa!" });
-        } else if (!decoded.rows[0].id_admin){
-          return res.status(402).send({ auth: false, message: "Anda bukan admin!" });
-        }
-        req.decoded = decoded; // Menyimpan data decoded ke dalam req untuk penggunaan selanjutnya
+        } else if (!decoded.rows[0].id_organization){
+          return res.status(402).send({ auth: false, message: "Anda bukan admin organisasi!" });
+        }        
+        req.decoded = decoded.rows[0]; // Menyimpan data decoded ke dalam req untuk penggunaan selanjutnya
         next(); // Lanjutkan ke middleware/route selanjutnya
       }
     });

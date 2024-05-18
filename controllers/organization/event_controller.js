@@ -39,8 +39,8 @@ exports.eventShow = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
-                        event_image: process.env.BASE_URL + `/images/event/` + row.event_image,
-                        site_plan_image: process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image,
+                        event_image: row.event_image,
+                        site_plan_image: row.site_plan_image,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
@@ -112,8 +112,8 @@ exports.eventShowId = async (req, res) => {
                         description: row.description,
                         location: row.location,
                         event_image: row.event_image,
-                        event_image: process.env.BASE_URL + `/images/event/` + row.event_image,
-                        site_plan_image: process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image,
+                        site_plan_image: row.site_plan_image,
+                        event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
                         event_start: row.event_start,
@@ -176,7 +176,7 @@ exports.eventApprove = async (req, res) => {
             if (error) {
                 console.log(error);
                 res.status(500).json({ status: 500, message: "Internal Server Error" });
-            } else {
+            } else {                
                 res.status(200).json({ status: 200, message: "Event has been approved" });
             }
         }
@@ -215,8 +215,8 @@ exports.eventPast = async (req, res) => {
                         description: row.description,
                         location: row.location,
                         event_image: row.event_image,
-                        event_image: process.env.BASE_URL + `/images/event/` + row.event_image,
-                        site_plan_image: process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image,
+                        site_plan_image: row.site_plan_image,
+                        event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
                         event_start: row.event_start,
@@ -286,8 +286,8 @@ exports.eventSoon = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
-                        event_image: process.env.BASE_URL + `/images/event/` + row.event_image,
-                        site_plan_image: process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image,
+                        event_image: row.event_image,
+                        site_plan_image: row.site_plan_image,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
@@ -357,8 +357,8 @@ exports.eventInProgress = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
-                        event_image: process.env.BASE_URL + `/images/event/` + row.event_image,
-                        site_plan_image: process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image,
+                        event_image: row.event_image,
+                        site_plan_image: row.site_plan_image,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,

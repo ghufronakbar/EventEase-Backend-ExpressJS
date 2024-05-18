@@ -1,11 +1,13 @@
-var mysql = require("mysql");
+const mysql = require("mysql");
+require('dotenv').config()
+const ENV = process.env
 
 //koneksi database
 const conn = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "event_ease",
+  host: ENV.DB_HOST,
+  user: ENV.DB_USER,
+  password: ENV.DB_PASSWORD,
+  database: ENV.DB_NAME,
 });
 
 conn.connect((err) => {

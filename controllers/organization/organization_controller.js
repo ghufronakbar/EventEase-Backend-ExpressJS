@@ -7,7 +7,7 @@ var ip = require('ip');
 var config = require('../../config/secret')
 var jwt = require('jsonwebtoken');
 var mysql = require('mysql');
-require('dotenv').config();
+
 
 exports.orgShow = async (req, res) => {
     const qOrgShow = `
@@ -37,9 +37,9 @@ exports.orgShow = async (req, res) => {
                         organization_name: row.organization_name,
                         email: row.email,
                         phone: row.phone,
-                        logo: process.env.BASE_URL +`/images/logo/` + row.logo,
-                        ktp: process.env.BASE_URL +`/images/ktp/` + row.ktp,
-                        legality_letter: process.env.BASE_URL +`/images/legality-letter/` + row.legality_letter,
+                        logo: row.logo,
+                        ktp: row.ktp,
+                        legality_letter: row.legality_letter,
                         status: row.org_status,
                         events: []
                     };
@@ -100,9 +100,9 @@ exports.orgShowId = async (req, res) => {
                         organization_name: row.organization_name,
                         email: row.email,
                         phone: row.phone,
-                        logo: process.env.BASE_URL +`/images/logo/` + row.logo,
-                        ktp: process.env.BASE_URL +`/images/ktp/` + row.ktp,
-                        legality_letter: process.env.BASE_URL +`/images/legality-letter/` + row.legality_letter,
+                        logo: row.logo,
+                        ktp: row.ktp,
+                        legality_letter: row.legality_letter,
                         status: row.org_status,
                         events: []
                     };
