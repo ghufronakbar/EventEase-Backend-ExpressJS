@@ -63,7 +63,12 @@ module.exports = function (app) {
   app.route(`/api/organization/history/:id_history`)
     .get(verifikasiOrganization, api_organization.history_controller.showHistoryId);
 
-  // app.route(`/api/organization/history/confirm/:id_history`)
-  //   .put(verifikasiOrganization, api_organization.history_controller.handleConfirm);
+
+  // ORDER
+  app.route(`/api/organization/order/confirm/:id_history`)
+    .put(verifikasiOrganization, api_organization.order_controller.handleConfirm);
+
+    app.route(`/api/organization/order/anomaly-transaction/:id_history`)
+    .put(verifikasiOrganization, api_organization.order_controller.handleAnomaly);
 };
 
