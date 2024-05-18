@@ -38,7 +38,7 @@ const upload = multer({ storage: storage }).fields([
 ]);
 
 exports.eventShow = async (req, res) => {
-    const id_organization = req.decoded.id_organization
+    const id_organization = req.decoded.id_organization;
     const qEventShow = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
@@ -61,6 +61,19 @@ exports.eventShow = async (req, res) => {
             rows.forEach(row => {
                 const eventId = row.id_event;
 
+                const now = new Date();
+                const eventStart = new Date(row.event_start);
+                const eventEnd = new Date(row.event_end);
+                let event_status = "";
+
+                if (now > eventEnd) {
+                    event_status = "Past";
+                } else if (now < eventStart) {
+                    event_status = "Soon";
+                } else if (now >= eventStart && now <= eventEnd) {
+                    event_status = "On Going";
+                }
+
                 if (!events[eventId]) {
                     events[eventId] = {
                         id_event: row.id_event,
@@ -69,13 +82,14 @@ exports.eventShow = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
-                        event_image: row.event_image,
-                        site_plan_image: row.site_plan_image,
+                        event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
+                        site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
                         event_start: row.event_start,
                         event_end: row.event_end,
+                        event_status,
                         created_at: row.created_at,
                         total_type: 0,
                         total_ticket: 0,
@@ -109,10 +123,12 @@ exports.eventShow = async (req, res) => {
 };
 
 
-exports.eventShowId = async (req, res) => {
+
+
+exports.eventShow = async (req, res) => {
     const { id_event } = req.params
-    const id_organization = req.decoded.id_organization
-    const qEventShowId = `
+    const id_organization = req.decoded.id_organization;
+    const qEventShow = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
                e.event_start, e.event_end, e.created_at, t.id_ticket, t.type AS ticket_type,
@@ -120,10 +136,10 @@ exports.eventShowId = async (req, res) => {
         FROM events AS e 
         LEFT JOIN tickets AS t ON e.id_event = t.id_event
         LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-        WHERE e.id_event=? AND o.id_organization=?
+        WHERE o.id_organization=? AND e.id_event=?
     `;
 
-    connection.query(qEventShowId, [id_event, id_organization], function (error, rows) {
+    connection.query(qEventShow, [id_organization, id_event], function (error, rows) {
         if (error) {
             console.log(error);
             res.status(500).json({ status: 500, message: "Internal Server Error" });
@@ -134,6 +150,19 @@ exports.eventShowId = async (req, res) => {
             rows.forEach(row => {
                 const eventId = row.id_event;
 
+                const now = new Date();
+                const eventStart = new Date(row.event_start);
+                const eventEnd = new Date(row.event_end);
+                let event_status = "";
+
+                if (now > eventEnd) {
+                    event_status = "Past";
+                } else if (now < eventStart) {
+                    event_status = "Soon";
+                } else if (now >= eventStart && now <= eventEnd) {
+                    event_status = "On Going";
+                }
+
                 if (!events[eventId]) {
                     events[eventId] = {
                         id_event: row.id_event,
@@ -142,13 +171,14 @@ exports.eventShowId = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
-                        event_image: row.event_image,
-                        site_plan_image: row.site_plan_image,
+                        event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
+                        site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
                         event_start: row.event_start,
                         event_end: row.event_end,
+                        event_status,
                         created_at: row.created_at,
                         total_type: 0,
                         total_ticket: 0,
@@ -180,7 +210,6 @@ exports.eventShowId = async (req, res) => {
         }
     });
 };
-
 
 exports.eventAdd = async (req, res) => {
     upload(req, res, function (err) {
@@ -295,7 +324,7 @@ exports.eventDelete = async (req, res) => {
         if (error) {
             console.log(error);
             return res.status(500).json({ status: 500, message: "Internal Server Error" });
-        } else {            
+        } else {
             return res.status(200).json({ status: 200, message: "Event has been deleted!" });
         }
     })
