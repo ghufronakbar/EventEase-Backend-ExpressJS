@@ -7,9 +7,38 @@ var ip = require('ip');
 var config = require('../../config/secret')
 var jwt = require('jsonwebtoken');
 var mysql = require('mysql');
+const multer = require('multer');
+const crypto = require('crypto');
+const fs = require('fs');
+require('dotenv').config();
 
+
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        let path = 'images/';
+        if (file.fieldname === 'event_image') {
+            path += 'event/';
+        } else if (file.fieldname === 'site_plan_image') {
+            path += 'site-plan/';
+        }
+        cb(null, path);
+    },
+    filename: function (req, file, cb) {
+        const ext = file.originalname.split('.').pop();
+        const randomString = crypto.randomBytes(3).toString('hex');
+        const newFilename = `${file.originalname.replace(`.${ext}`, '')}_${randomString}.${ext}`;
+        cb(null, newFilename);
+    }
+});
+
+const upload = multer({ storage: storage }).fields([
+    { name: 'event_image', maxCount: 1 },
+    { name: 'site_plan_image', maxCount: 1 }
+]);
 
 exports.eventShow = async (req, res) => {
+    const id_organization = req.decoded.id_organization
     const qEventShow = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
@@ -18,9 +47,10 @@ exports.eventShow = async (req, res) => {
         FROM events AS e 
         LEFT JOIN tickets AS t ON e.id_event = t.id_event
         LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
+        WHERE o.id_organization=?
     `;
 
-    connection.query(qEventShow, function (error, rows) {
+    connection.query(qEventShow, id_organization, function (error, rows) {
         if (error) {
             console.log(error);
             res.status(500).json({ status: 500, message: "Internal Server Error" });
@@ -81,6 +111,7 @@ exports.eventShow = async (req, res) => {
 
 exports.eventShowId = async (req, res) => {
     const { id_event } = req.params
+    const id_organization = req.decoded.id_organization
     const qEventShowId = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
@@ -89,10 +120,10 @@ exports.eventShowId = async (req, res) => {
         FROM events AS e 
         LEFT JOIN tickets AS t ON e.id_event = t.id_event
         LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-        WHERE e.id_event=?
+        WHERE e.id_event=? AND o.id_organization=?
     `;
 
-    connection.query(qEventShowId, id_event, function (error, rows) {
+    connection.query(qEventShowId, [id_event, id_organization], function (error, rows) {
         if (error) {
             console.log(error);
             res.status(500).json({ status: 500, message: "Internal Server Error" });
@@ -151,247 +182,122 @@ exports.eventShowId = async (req, res) => {
 };
 
 
-exports.eventReject = async (req, res) => {
-    const { id_event } = req.params
-    const qEventReject = `UPDATE events SET status=1 WHERE id_event=?`
+exports.eventAdd = async (req, res) => {
+    upload(req, res, function (err) {
+        const event_image = req.files['event_image'] ? req.files['event_image'][0].filename : null;
+        const site_plan_image = req.files['site_plan_image'] ? req.files['site_plan_image'][0].filename : null;
 
-    connection.query(qEventReject, id_event,
-        function (error, rows, result) {
-            if (error) {
-                console.log(error);
-                res.status(500).json({ status: 500, message: "Internal Server Error" });
+        if (err instanceof multer.MulterError) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: 'Failed to upload image.' });
+        } else if (err) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: 'An unexpected error occurred.' });
+        } else {
+            const { event_name, description, location, type, payment_information, event_start, event_end } = req.body;
+            const id_organization = req.decoded.id_organization;
+            const status = 0;
+            let now = new Date();
+            let datetimenow = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2) + ' ' +
+                ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+
+            if (!(event_name && description && location && type && payment_information && event_start && event_end && event_image)) {
+                if (event_image) fs.unlinkSync(`images/event/${event_image}`);
+                if (site_plan_image) fs.unlinkSync(`images/site-plan/${site_plan_image}`);
+                return res.status(400).json({ status: 400, message: "Field can't be blank!" });
             } else {
-                res.status(200).json({ status: 200, message: "Event has been rejected" });
+                const qEventAdd = `INSERT INTO events(id_organization,event_name,description,location,event_image,site_plan_image,type,status,payment_information,event_start,event_end,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`;
+                const vEventAdd = [id_organization, event_name, description, location, event_image, site_plan_image, type, status, payment_information, event_start, event_end, datetimenow];
+                connection.query(qEventAdd, vEventAdd, function (error) {
+                    if (error) {
+                        console.log(error);
+                        if (event_image) fs.unlinkSync(`images/event/${event_image}`);
+                        if (site_plan_image) fs.unlinkSync(`images/site-plan/${site_plan_image}`);
+                        return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                    } else {
+                        return res.status(200).json({ status: 200, message: "Successfully inserted event!" });
+                    }
+                });
             }
         }
-    )
-}
+    });
+};
 
-exports.eventApprove = async (req, res) => {
-    const { id_event } = req.params
-    const qEventApprove = `UPDATE events SET status=2 WHERE id_event=?`
+exports.eventEdit = async (req, res) => {
+    const id_event = req.params.id_event;
+    upload(req, res, function (err) {
+        const event_image = req.files['event_image'] ? req.files['event_image'][0].filename : null;
+        const site_plan_image = req.files['site_plan_image'] ? req.files['site_plan_image'][0].filename : null;
 
-    connection.query(qEventApprove, id_event,
-        function (error, rows, result) {
-            if (error) {
-                console.log(error);
-                res.status(500).json({ status: 500, message: "Internal Server Error" });
-            } else {                
-                res.status(200).json({ status: 200, message: "Event has been approved" });
+        if (err instanceof multer.MulterError) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: 'Failed to upload image.' });
+        } else if (err) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: 'An unexpected error occurred.' });
+        } else {
+            const { event_name, description, location, type, payment_information, event_start, event_end } = req.body;
+            const id_organization = req.decoded.id_organization;
+
+            if (!(event_name && description && location && type && payment_information && event_start && event_end)) {
+                if (event_image) fs.unlinkSync(`images/event/${event_image}`);
+                if (site_plan_image) fs.unlinkSync(`images/site-plan/${site_plan_image}`);
+                return res.status(400).json({ status: 400, message: "Field can't be blank!" });
+            } else {
+                connection.query(`SELECT event_image, site_plan_image FROM events WHERE id_event = ?`, [id_event], function (error, rows, result) {
+                    if (error) {
+                        console.log(error);
+                        return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                    }
+                    const oldEventImage = rows[0].event_image;
+                    const oldSitePlanImage = rows[0].site_plan_image;
+
+                    let updateQuery = `UPDATE events SET event_name = ?, description = ?, location = ?, type = ?, payment_information = ?, event_start = ?, event_end = ?`;
+                    let updateValues = [event_name, description, location, type, payment_information, event_start, event_end];
+
+                    if (event_image) {
+                        updateQuery += `, event_image = ?`;
+                        updateValues.push(event_image);
+                        if (oldEventImage) fs.unlinkSync(`images/event/${oldEventImage}`);
+                    }
+
+                    if (site_plan_image) {
+                        updateQuery += `, site_plan_image = ?`;
+                        updateValues.push(site_plan_image);
+                        if (oldSitePlanImage) fs.unlinkSync(`images/site-plan/${oldSitePlanImage}`);
+                    }
+
+                    updateQuery += ` WHERE id_event = ? AND id_organization = ?`;
+                    updateValues.push(id_event, id_organization);
+
+                    connection.query(updateQuery, updateValues, function (error) {
+                        if (error) {
+                            console.log(error);
+                            if (event_image) fs.unlinkSync(`images/event/${event_image}`);
+                            if (site_plan_image) fs.unlinkSync(`images/site-plan/${site_plan_image}`);
+                            return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                        } else {
+                            return res.status(200).json({ status: 200, message: "Successfully updated event!" });
+                        }
+                    });
+                });
             }
         }
-    )
+    });
+};
+
+
+exports.eventDelete = async (req, res) => {
+    const id_organization = req.decoded.id_organization
+    const id_event = req.params.id_event
+    const qEventDelete = `DELETE FROM events WHERE id_event=? AND id_organization=?`
+    const x = connection.query(qEventDelete, [id_event, id_organization], async (error, rows, result) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ status: 500, message: "Internal Server Error" });
+        } else {
+            console.log(x)
+            return res.status(200).json({ status: 200, message: "Event has been deleted!" });
+        }
+    })
 }
-
-exports.eventPast = async (req, res) => {
-    const qEventPast = `
-        SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
-               e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
-               e.event_start, e.event_end, e.created_at, t.id_ticket, t.type AS ticket_type,
-               t.amount, t.sold, t.price, t.date_start, t.date_end
-        FROM events AS e 
-        LEFT JOIN tickets AS t ON e.id_event = t.id_event
-        LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-        WHERE e.event_end < CURDATE()
-    `;
-
-    connection.query(qEventPast, function (error, rows) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({ status: 500, message: "Internal Server Error" });
-        } else {
-            // Process the rows to create the desired output format
-            const events = {};
-
-            rows.forEach(row => {
-                const eventId = row.id_event;
-
-                if (!events[eventId]) {
-                    events[eventId] = {
-                        id_event: row.id_event,
-                        id_organization: row.id_organization,
-                        organization_name: row.organization_name,
-                        event_name: row.event_name,
-                        description: row.description,
-                        location: row.location,
-                        event_image: row.event_image,
-                        site_plan_image: row.site_plan_image,
-                        event_type: row.event_type,
-                        status: row.status,
-                        payment_information: row.payment_information,
-                        event_start: row.event_start,
-                        event_end: row.event_end,
-                        created_at: row.created_at,
-                        total_type: 0,
-                        total_ticket: 0,
-                        total_sold: 0,
-                        tickets: []
-                    };
-                }
-
-                if (row.id_ticket) {
-                    events[eventId].tickets.push({
-                        id_ticket: row.id_ticket,
-                        ticket_type: row.ticket_type,
-                        amount: row.amount,
-                        sold: row.sold,
-                        price: row.price,
-                        date_start: row.date_start,
-                        date_end: row.date_end
-                    });
-
-                    events[eventId].total_type += 1;
-                    events[eventId].total_ticket += row.amount;
-                    events[eventId].total_sold += row.sold;
-                }
-            });
-
-            const result = Object.values(events);
-
-            res.json(result);
-        }
-    });
-};
-
-
-
-exports.eventSoon = async (req, res) => {
-    const qEventSoon = `
-        SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
-               e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
-               e.event_start, e.event_end, e.created_at, t.id_ticket, t.type AS ticket_type,
-               t.amount, t.sold, t.price, t.date_start, t.date_end
-        FROM events AS e 
-        LEFT JOIN tickets AS t ON e.id_event = t.id_event
-        LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-        WHERE e.event_start > CURDATE() 
-    `;
-
-    connection.query(qEventSoon, function (error, rows) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({ status: 500, message: "Internal Server Error" });
-        } else {
-            // Process the rows to create the desired output format
-            const events = {};
-
-            rows.forEach(row => {
-                const eventId = row.id_event;
-
-                if (!events[eventId]) {
-                    events[eventId] = {
-                        id_event: row.id_event,
-                        id_organization: row.id_organization,
-                        organization_name: row.organization_name,
-                        event_name: row.event_name,
-                        description: row.description,
-                        location: row.location,
-                        event_image: row.event_image,
-                        site_plan_image: row.site_plan_image,
-                        event_type: row.event_type,
-                        status: row.status,
-                        payment_information: row.payment_information,
-                        event_start: row.event_start,
-                        event_end: row.event_end,
-                        created_at: row.created_at,
-                        total_type: 0,
-                        total_ticket: 0,
-                        total_sold: 0,
-                        tickets: []
-                    };
-                }
-
-                if (row.id_ticket) {
-                    events[eventId].tickets.push({
-                        id_ticket: row.id_ticket,
-                        ticket_type: row.ticket_type,
-                        amount: row.amount,
-                        sold: row.sold,
-                        price: row.price,
-                        date_start: row.date_start,
-                        date_end: row.date_end
-                    });
-
-                    events[eventId].total_type += 1;
-                    events[eventId].total_ticket += row.amount;
-                    events[eventId].total_sold += row.sold;
-                }
-            });
-
-            const result = Object.values(events);
-
-            res.json(result);
-        }
-    });
-};
-
-
-exports.eventInProgress = async (req, res) => {
-    const qEventInProgress = `
-        SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
-               e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
-               e.event_start, e.event_end, e.created_at, t.id_ticket, t.type AS ticket_type,
-               t.amount, t.sold, t.price, t.date_start, t.date_end
-        FROM events AS e 
-        LEFT JOIN tickets AS t ON e.id_event = t.id_event
-        LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-        WHERE e.event_start < CURDATE() AND e.event_end > CURDATE()
-    `;
-
-    connection.query(qEventInProgress, function (error, rows) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({ status: 500, message: "Internal Server Error" });
-        } else {
-            // Process the rows to create the desired output format
-            const events = {};
-
-            rows.forEach(row => {
-                const eventId = row.id_event;
-
-                if (!events[eventId]) {
-                    events[eventId] = {
-                        id_event: row.id_event,
-                        id_organization: row.id_organization,
-                        organization_name: row.organization_name,
-                        event_name: row.event_name,
-                        description: row.description,
-                        location: row.location,
-                        event_image: row.event_image,
-                        site_plan_image: row.site_plan_image,
-                        event_type: row.event_type,
-                        status: row.status,
-                        payment_information: row.payment_information,
-                        event_start: row.event_start,
-                        event_end: row.event_end,
-                        created_at: row.created_at,
-                        total_type: 0,
-                        total_ticket: 0,
-                        total_sold: 0,
-                        tickets: []
-                    };
-                }
-
-                if (row.id_ticket) {
-                    events[eventId].tickets.push({
-                        id_ticket: row.id_ticket,
-                        ticket_type: row.ticket_type,
-                        amount: row.amount,
-                        sold: row.sold,
-                        price: row.price,
-                        date_start: row.date_start,
-                        date_end: row.date_end
-                    });
-
-                    events[eventId].total_type += 1;
-                    events[eventId].total_ticket += row.amount;
-                    events[eventId].total_sold += row.sold;
-                }
-            });
-
-            const result = Object.values(events);
-
-            res.json(result);
-        }
-    });
-};

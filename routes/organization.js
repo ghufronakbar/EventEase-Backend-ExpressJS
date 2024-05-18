@@ -19,5 +19,21 @@ module.exports = function (app) {
   app.route(`/api/organization/profile/edit`)
     .put(verifikasiOrganization, api_organization.account_controller.editProfile);
 
+
+  //EVENT CONTROLLER
+  app.route(`/api/organization/events`)
+    .get(verifikasiOrganization, api_organization.event_controller.eventShow);
+
+  app.route(`/api/organization/event/:id_event`)
+    .get(verifikasiOrganization, api_organization.event_controller.eventShowId);
+
+    app.route(`/api/organization/event/add`)
+    .post(verifikasiOrganization, api_organization.event_controller.eventAdd);
+
+    app.route(`/api/organization/event/edit/:id_event`)
+    .put(verifikasiOrganization, api_organization.event_controller.eventEdit);
+
+    app.route(`/api/organization/event/delete/:id_event`)
+    .delete(verifikasiOrganization, api_organization.event_controller.eventDelete);
 };
 
