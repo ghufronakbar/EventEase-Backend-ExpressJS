@@ -39,6 +39,17 @@ const upload = multer({ storage: storage }).fields([
 
 exports.eventShow = async (req, res) => {
     const id_organization = req.decoded.id_organization;
+    const { time } = req.query
+    let queryTime = ""
+    if (time == undefined) {
+        queryTime = ""
+    } else if (time == "past") {
+        queryTime = "AND e.event_end < CURDATE()"
+    } else if (time == "on-going") {
+        queryTime = "AND e.event_start < CURDATE() AND e.event_end > CURDATE()"
+    } else if (time == "soon") {
+        queryTime = "AND e.event_start > CURDATE() "
+    }
     const qEventShow = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
@@ -47,7 +58,7 @@ exports.eventShow = async (req, res) => {
         FROM events AS e 
         LEFT JOIN tickets AS t ON e.id_event = t.id_event
         LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-        WHERE o.id_organization=?
+        WHERE o.id_organization=? ${queryTime}
     `;
 
     connection.query(qEventShow, id_organization, function (error, rows) {
@@ -125,7 +136,7 @@ exports.eventShow = async (req, res) => {
 
 
 
-exports.eventShow = async (req, res) => {
+exports.eventShowId = async (req, res) => {
     const { id_event } = req.params
     const id_organization = req.decoded.id_organization;
     const qEventShow = `
