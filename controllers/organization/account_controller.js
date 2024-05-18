@@ -56,8 +56,10 @@ exports.login = function (req, res) {
                 console.log(error);
                 return res.status(500).json({ status: 500, message: "Internal Server Error" });
             } else {
+                if (rows.length == 0){
+                    return res.status(400).json({status:400, message:"Incorrect email"})
+                }
                 const validateStatus = rows[0].status
-
                 if (validateStatus != 2) {
                     return res.status(404).json({ status: 404, message: "Yoa are not allowed to login!" });
                 } else {
@@ -77,7 +79,7 @@ exports.login = function (req, res) {
 
                             } else if (rows.length == 1) {
                                 var token = jwt.sign({ rows }, config.secret, {
-                                    expiresIn: 1440
+                                    expiresIn: 99999999
                                 });
                                 let id_organization = rows[0].id_organization;
 

@@ -278,6 +278,23 @@ exports.eventSoon = async (req, res) => {
             rows.forEach(row => {
                 const eventId = row.id_event;
 
+                const now = new Date();
+                const eventStart = new Date(row.event_start);
+                const eventEnd = new Date(row.event_end);
+                let event_status = "";
+                let base_url_google_map = "https://google.com/maps?q="
+                let query_google_map = row.location.split(" ").join("+")
+                const url_google_map = base_url_google_map + query_google_map;
+
+
+                if (now > eventEnd) {
+                    event_status = "Past";
+                } else if (now < eventStart) {
+                    event_status = "Soon";
+                } else if (now >= eventStart && now <= eventEnd) {
+                    event_status = "On Going";
+                }
+
                 if (!events[eventId]) {
                     events[eventId] = {
                         id_event: row.id_event,
@@ -288,11 +305,13 @@ exports.eventSoon = async (req, res) => {
                         location: row.location,
                         event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
                         site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,
+                        url_google_map,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
                         event_start: row.event_start,
                         event_end: row.event_end,
+                        event_status,
                         created_at: row.created_at,
                         total_type: 0,
                         total_ticket: 0,
@@ -349,6 +368,23 @@ exports.eventInProgress = async (req, res) => {
             rows.forEach(row => {
                 const eventId = row.id_event;
 
+                const now = new Date();
+                const eventStart = new Date(row.event_start);
+                const eventEnd = new Date(row.event_end);
+                let event_status = "";
+                let base_url_google_map = "https://google.com/maps?q="
+                let query_google_map = row.location.split(" ").join("+")
+                const url_google_map = base_url_google_map + query_google_map;
+
+
+                if (now > eventEnd) {
+                    event_status = "Past";
+                } else if (now < eventStart) {
+                    event_status = "Soon";
+                } else if (now >= eventStart && now <= eventEnd) {
+                    event_status = "On Going";
+                }
+
                 if (!events[eventId]) {
                     events[eventId] = {
                         id_event: row.id_event,
@@ -359,11 +395,13 @@ exports.eventInProgress = async (req, res) => {
                         location: row.location,
                         event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
                         site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,
+                        url_google_map,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
                         event_start: row.event_start,
                         event_end: row.event_end,
+                        event_status,
                         created_at: row.created_at,
                         total_type: 0,
                         total_ticket: 0,

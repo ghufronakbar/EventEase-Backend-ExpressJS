@@ -76,6 +76,10 @@ exports.eventShow = async (req, res) => {
                 const eventStart = new Date(row.event_start);
                 const eventEnd = new Date(row.event_end);
                 let event_status = "";
+                let base_url_google_map = "https://google.com/maps?q="
+                let query_google_map = row.location.split(" ").join("+")
+                const url_google_map = base_url_google_map + query_google_map;
+
 
                 if (now > eventEnd) {
                     event_status = "Past";
@@ -95,6 +99,7 @@ exports.eventShow = async (req, res) => {
                         location: row.location,
                         event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
                         site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,
+                        url_google_map,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
@@ -165,6 +170,10 @@ exports.eventShowId = async (req, res) => {
                 const eventStart = new Date(row.event_start);
                 const eventEnd = new Date(row.event_end);
                 let event_status = "";
+                let base_url_google_map = "https://google.com/maps?q="
+                let query_google_map = row.location.split(" ").join("+")
+                const url_google_map = base_url_google_map + query_google_map;
+
 
                 if (now > eventEnd) {
                     event_status = "Past";
@@ -184,6 +193,7 @@ exports.eventShowId = async (req, res) => {
                         location: row.location,
                         event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
                         site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,
+                        url_google_map,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
