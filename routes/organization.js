@@ -50,10 +50,20 @@ module.exports = function (app) {
   app.route(`/api/organization/ticket/edit/:id_ticket`)
     .put(verifikasiOrganization, api_organization.ticket_controller.ticketEdit);
 
-    app.route(`/api/organization/ticket/set-amount/:id_ticket`)
-    .put(verifikasiOrganization, api_organization.ticket_controller.ticketSetAmount);  
+  app.route(`/api/organization/ticket/set-amount/:id_ticket`)
+    .put(verifikasiOrganization, api_organization.ticket_controller.ticketSetAmount);
 
-    app.route(`/api/organization/ticket/delete/:id_ticket`)
-    .delete(verifikasiOrganization, api_organization.ticket_controller.ticketDelete);  
+  app.route(`/api/organization/ticket/delete/:id_ticket`)
+    .delete(verifikasiOrganization, api_organization.ticket_controller.ticketDelete);
+
+  //HISTORY CONTROLLER
+  app.route(`/api/organization/histories`)
+    .get(verifikasiOrganization, api_organization.history_controller.showHistory);
+
+  app.route(`/api/organization/history/:id_history`)
+    .get(verifikasiOrganization, api_organization.history_controller.showHistoryId);
+
+  // app.route(`/api/organization/history/confirm/:id_history`)
+  //   .put(verifikasiOrganization, api_organization.history_controller.handleConfirm);
 };
 
