@@ -27,13 +27,33 @@ module.exports = function (app) {
   app.route(`/api/organization/event/:id_event`)
     .get(verifikasiOrganization, api_organization.event_controller.eventShowId);
 
-    app.route(`/api/organization/event/add`)
+  app.route(`/api/organization/event/add`)
     .post(verifikasiOrganization, api_organization.event_controller.eventAdd);
 
-    app.route(`/api/organization/event/edit/:id_event`)
+  app.route(`/api/organization/event/edit/:id_event`)
     .put(verifikasiOrganization, api_organization.event_controller.eventEdit);
 
-    app.route(`/api/organization/event/delete/:id_event`)
+  app.route(`/api/organization/event/delete/:id_event`)
     .delete(verifikasiOrganization, api_organization.event_controller.eventDelete);
+
+
+  //TICKET CONTROLLER
+  app.route(`/api/organization/tickets/:id_event`)
+    .get(verifikasiOrganization, api_organization.ticket_controller.ticketShow);
+
+  app.route(`/api/organization/ticket/:id_ticket`)
+    .get(verifikasiOrganization, api_organization.ticket_controller.ticketShowId);
+
+  app.route(`/api/organization/ticket/add`)
+    .post(verifikasiOrganization, api_organization.ticket_controller.ticketAdd);
+
+  app.route(`/api/organization/ticket/edit/:id_ticket`)
+    .put(verifikasiOrganization, api_organization.ticket_controller.ticketEdit);
+
+    app.route(`/api/organization/ticket/set-amount/:id_ticket`)
+    .put(verifikasiOrganization, api_organization.ticket_controller.ticketSetAmount);  
+
+    app.route(`/api/organization/ticket/delete/:id_ticket`)
+    .delete(verifikasiOrganization, api_organization.ticket_controller.ticketDelete);  
 };
 
