@@ -57,7 +57,7 @@ exports.login = function (req, res) {
                 return res.status(500).json({ status: 500, message: "Internal Server Error" });
             } else {
                 if (rows.length == 0){
-                    return res.status(400).json({status:400, message:"Incorrect email"})
+                    return res.status(400).json({status:400, message:"Email doesn't exist, please register first!"})
                 }
                 const validateStatus = rows[0].status
                 if (validateStatus != 2) {
