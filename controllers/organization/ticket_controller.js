@@ -99,11 +99,11 @@ exports.ticketShowId = async (req, res) => {
 
 
 exports.ticketAdd = async (req, res) => {
-    const { type, amount, sold, price, date_start, date_end, id_event } = req.body;
+    const { type, price, date_start, date_end, id_event } = req.body;
     const qTicketAdd = `INSERT INTO tickets(id_event,type,amount,sold,price,date_start,date_end) VALUES(?,?,?,?,?,?,?)`;
-    const vTicketAdd = [id_event, type, amount, sold, price, date_start, date_end];
+    const vTicketAdd = [id_event, type, 0,0, price, date_start, date_end];
 
-    if (!type || !amount || !sold || !price || !date_start || !date_end) {
+    if (!type || !price || !date_start || !date_end) {
         return res.status(400).json({ status: 400, message: "Field can't be blank" });
     } else {
         const now = new Date();
@@ -127,15 +127,14 @@ exports.ticketAdd = async (req, res) => {
     }
 };
 
-
 exports.ticketEdit = async (req, res) => {
     const { type, price, date_start, date_end } = req.body;
     const id_ticket = req.params.id_ticket;
     const qTicketEdit = `UPDATE tickets SET type=?, price=?, date_start=?, date_end=? WHERE id_ticket=?`;
-    const vTicketEdit = [type, price, date_start, date_end, id_ticket];
-
+    const vTicketEdit = [type, price, date_start, date_end, id_ticket];    
     if (!type || !price || !date_start || !date_end) {
-        return res.status(400).json({ status: 400, message: "Field can't be blank" });
+
+        return res.status(403).json({ status: 403, message: "Field can't be blank" });
     } else {
         const now = new Date();
         const startDate = new Date(date_start);

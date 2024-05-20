@@ -124,7 +124,30 @@ exports.profile = async (req, res) => {
                 console.log(error);
                 res.status(500).json({ status: 500, message: "Internal Server Error" });
             } else {
-                res.status(200).json(rows);
+                const organizations = {};
+                rows.forEach(row => {
+                    const orgId = row.id_organization;
+    
+                    
+                    if (!organizations[orgId]) {
+                        organizations[orgId] = {
+                            id_organization: row.id_organization,
+                            organization_name: row.organization_name,
+                            email: row.email,
+                            phone: row.phone,
+                            logo: process.env.BASE_URL + `/images/logo/` + row.logo,
+                            ktp: process.env.BASE_URL + `/images/ktp/` + row.ktp,
+                            legality_letter: process.env.BASE_URL + `/images/legality-letter/` + row.legality_letter,
+                            status: row.status
+                        };
+                    }
+    
+                    
+                });
+    
+                const result = Object.values(organizations);
+    
+                res.json(result);
             }
         }
     )

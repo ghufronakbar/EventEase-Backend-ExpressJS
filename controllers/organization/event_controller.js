@@ -39,8 +39,9 @@ const upload = multer({ storage: storage }).fields([
 
 exports.eventShow = async (req, res) => {
     const id_organization = req.decoded.id_organization;
-    const { time } = req.query
+    const { time, status } = req.query
     let queryTime = ""
+    let queryStatus = ""
     if (time == undefined) {
         queryTime = ""
     } else if (time == "past") {
@@ -50,6 +51,17 @@ exports.eventShow = async (req, res) => {
     } else if (time == "soon") {
         queryTime = "AND e.event_start > CURDATE() "
     }
+
+    if (status == undefined) {
+        queryStatus = ""
+    } else if (status == 0) {
+        queryStatus = "AND e.status=0"
+    } else if (status == 1) {
+        queryStatus = "AND e.status=1"
+    } else if (status == 2) {
+        queryStatus = "AND e.status=2"
+    }
+
     const qEventShow = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
@@ -58,7 +70,7 @@ exports.eventShow = async (req, res) => {
         FROM events AS e 
         LEFT JOIN tickets AS t ON e.id_event = t.id_event
         LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-        WHERE o.id_organization=? ${queryTime}
+        WHERE o.id_organization=? ${queryTime} ${queryStatus}
     `;
 
     connection.query(qEventShow, id_organization, function (error, rows) {
@@ -132,7 +144,6 @@ exports.eventShow = async (req, res) => {
             });
 
             const result = Object.values(events);
-
             res.json(result);
         }
     });
