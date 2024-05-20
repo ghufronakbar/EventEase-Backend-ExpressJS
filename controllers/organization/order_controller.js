@@ -33,7 +33,7 @@ exports.handleAnomaly = async (req, res) => {
                 console.log(error);
                 return res.status(500).json({ status: 500, message: "Internal Server Error" });
             } else {
-                const qGetAmount = `SELECT amount,index_ticket FROM histories WHERE id_history=?`
+                const qGetAmount = `SELECT amount,id_ticket FROM histories WHERE id_history=?`
                 connection.query(qGetAmount, id_history,
                     (error, rows, result) => {
                         if (error) {
@@ -41,7 +41,7 @@ exports.handleAnomaly = async (req, res) => {
                             return res.status(500).json({ status: 500, message: "Internal Server Error" });
                         } else {
                             const amount = rows[0].amount
-                            const index_ticket = rows[0].index_ticket
+                            const index_ticket = rows[0].id_ticket
                             const qGetSold = `SELECT sold FROM tickets WHERE id_ticket=?`
                             connection.query(qGetSold, index_ticket,
                                 (error, rows, result) => {
@@ -81,7 +81,7 @@ exports.handleScanTicket = async (req, res) => {
     const id_organization = req.decoded.id_organization
     const { unique_code } = req.body
     const decoded_uc = unique_code.split("/")
-    
+
     if (decoded_uc.length != 7) {
         return res.status(400).json({ status: 400, message: "Invalid unique code" });
     } else {
