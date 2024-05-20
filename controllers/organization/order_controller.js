@@ -80,9 +80,8 @@ exports.handleAnomaly = async (req, res) => {
 exports.handleScanTicket = async (req, res) => {
     const id_organization = req.decoded.id_organization
     const { unique_code } = req.body
-    
-    console.log(unique_code)
     const decoded_uc = unique_code.split("/")
+    
     if (decoded_uc.length != 7) {
         return res.status(400).json({ status: 400, message: "Invalid unique code" });
     } else {
