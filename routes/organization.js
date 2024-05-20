@@ -70,5 +70,8 @@ module.exports = function (app) {
 
     app.route(`/api/organization/order/anomaly-transaction/:id_history`)
     .put(verifikasiOrganization, api_organization.order_controller.handleAnomaly);
+
+    app.route(`/api/organization/order/scan-ticket`)
+    .put(verifikasiOrganization, api_organization.order_controller.handleScanTicket);
 };
 
