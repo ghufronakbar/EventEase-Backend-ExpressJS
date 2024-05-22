@@ -290,3 +290,48 @@ exports.editProfile = async (req, res) => {
         }
     });
 };
+
+
+exports.editPassword = async (req, res) => {
+    let old_password = md5(req.body.old_password);
+    let new_password = md5(req.body.new_password);
+    let id_organization = req.decoded.id_organization;
+
+    console.log(old_password)
+    console.log(new_password)
+    console.log(id_organization)
+    // Periksa old_password dengan melakukan SELECT query
+    connection.query(`
+        SELECT password FROM organizations WHERE id_organization = ?`,
+        [id_organization],
+        function (error, rows, fields) {
+            if (error) {
+                console.log(error);
+                response.error("Error occurred while fetching old password", res);
+            } else {
+                // Periksa apakah password lama cocok
+                if (rows.length > 0) {
+                    if (rows[0].password === old_password) {
+                        // Jika password lama cocok, lakukan update password
+                        connection.query(`
+                            UPDATE organizations SET password=? WHERE id_organization=?`,
+                            [new_password, id_organization],
+                            function (error, rows, fields) {
+                                if (error) {
+                                    console.log(error);
+                                    response.error("Error occurred while updating password", res);
+                                } else {
+                                    response.ok("Password updated successfully", res);
+                                }
+                            }
+                        );
+                    } else {
+                        response.error("Old password does not match", res);
+                    }
+                } else {
+                    response.error("Instance not found", res);
+                }
+            }
+        }
+    );
+};

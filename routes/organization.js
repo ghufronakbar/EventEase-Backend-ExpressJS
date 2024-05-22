@@ -19,6 +19,8 @@ module.exports = function (app) {
   app.route(`/api/organization/profile/edit`)
     .put(verifikasiOrganization, api_organization.account_controller.editProfile);
 
+    app.route(`/api/organization/profile/edit/password`)
+    .put(verifikasiOrganization, api_organization.account_controller.editPassword);
 
   //EVENT CONTROLLER
   app.route(`/api/organization/events`)
