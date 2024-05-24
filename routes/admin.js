@@ -34,15 +34,6 @@ module.exports = function (app) {
   app.route(`/api/admin/event/:id_event`)
     .get(verifikasiAdmin, api_admin.event_controller.eventShowId);
 
-    app.route(`/api/admin/events/past`)
-    .get(verifikasiAdmin, api_admin.event_controller.eventPast);
-
-    app.route(`/api/admin/events/soon`)
-    .get(verifikasiAdmin, api_admin.event_controller.eventSoon);
-
-    app.route(`/api/admin/events/in-progress`)
-    .get(verifikasiAdmin, api_admin.event_controller.eventInProgress);
-
   app.route(`/api/admin/event/reject/:id_event`)
     .put(verifikasiAdmin, api_admin.event_controller.eventReject);
 

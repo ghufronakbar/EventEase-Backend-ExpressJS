@@ -10,15 +10,43 @@ var mysql = require('mysql');
 
 
 exports.eventShow = async (req, res) => {
+
+    const { time, status } = req.query;
+
+    let conditions = [];
+
+    if (time) {
+        if (time === "past") {
+            conditions.push("e.event_end < CURDATE()");
+        } else if (time === "on-going") {
+            conditions.push("e.event_start < CURDATE() AND e.event_end > CURDATE()");
+        } else if (time === "soon") {
+            conditions.push("e.event_start > CURDATE()");
+        }
+    }
+
+    if (status !== undefined) {
+        if (status == 0) {
+            conditions.push("e.status = 0");
+        } else if (status == 1) {
+            conditions.push("e.status = 1");
+        } else if (status == 2) {
+            conditions.push("e.status = 2");
+        }
+    }
+
+    let queryWhere = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
     const qEventShow = `
-        SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
-               e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
-               e.event_start, e.event_end, e.created_at, t.id_ticket, t.type AS ticket_type,
-               t.amount, t.sold, t.price, t.date_start, t.date_end
-        FROM events AS e 
-        LEFT JOIN tickets AS t ON e.id_event = t.id_event
-        LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-    `;
+  SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
+         e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
+         e.event_start, e.event_end, e.created_at, t.id_ticket, t.type AS ticket_type,
+         t.amount, t.sold, t.price, t.date_start, t.date_end
+  FROM events AS e 
+  LEFT JOIN tickets AS t ON e.id_event = t.id_event
+  LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
+  ${queryWhere}
+`;
 
     connection.query(qEventShow, function (error, rows) {
         if (error) {
@@ -31,6 +59,23 @@ exports.eventShow = async (req, res) => {
             rows.forEach(row => {
                 const eventId = row.id_event;
 
+                const now = new Date();
+                const eventStart = new Date(row.event_start);
+                const eventEnd = new Date(row.event_end);
+                let event_status = "";
+                let base_url_google_map = "https://google.com/maps?q="
+                let query_google_map = row.location.split(" ").join("+")
+                const url_google_map = base_url_google_map + query_google_map;
+
+
+                if (now > eventEnd) {
+                    event_status = "Past";
+                } else if (now < eventStart) {
+                    event_status = "Soon";
+                } else if (now >= eventStart && now <= eventEnd) {
+                    event_status = "On Going";
+                }
+
                 if (!events[eventId]) {
                     events[eventId] = {
                         id_event: row.id_event,
@@ -41,11 +86,13 @@ exports.eventShow = async (req, res) => {
                         location: row.location,
                         event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
                         site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,
+                        url_google_map,
                         event_type: row.event_type,
                         status: row.status,
                         payment_information: row.payment_information,
                         event_start: row.event_start,
                         event_end: row.event_end,
+                        event_status,
                         created_at: row.created_at,
                         total_type: 0,
                         total_ticket: 0,
@@ -72,11 +119,11 @@ exports.eventShow = async (req, res) => {
             });
 
             const result = Object.values(events);
-
             res.json(result);
         }
     });
 };
+
 
 
 exports.eventShowId = async (req, res) => {

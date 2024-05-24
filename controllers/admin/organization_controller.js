@@ -10,6 +10,15 @@ var mysql = require('mysql');
 require('dotenv').config();
 
 exports.orgShow = async (req, res) => {
+    const { status } = req.query;    
+    let queryStatus = ""
+
+    if (status !== undefined) {
+        if (status) {
+            queryStatus=`WHERE o.status = ${status}`
+        } 
+    }    
+
     const qOrgShow = `
         SELECT o.id_organization, o.organization_name, o.email, o.phone, o.logo, o.ktp, 
                o.legality_letter, o.status AS org_status,
@@ -17,7 +26,7 @@ exports.orgShow = async (req, res) => {
                e.site_plan_image, e.type, e.status AS event_status, e.payment_information, 
                e.event_start, e.event_end, e.created_at
         FROM organizations AS o 
-        LEFT JOIN events AS e ON o.id_organization = e.id_organization
+        LEFT JOIN events AS e ON o.id_organization = e.id_organization ${queryStatus}
     `;
 
     connection.query(qOrgShow, function (error, rows) {
