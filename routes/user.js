@@ -22,6 +22,18 @@ module.exports = function (app) {
     .put(UserVerification, UserController.account_controller.editPassword);
 
 
+  // EVENT CONTROLLER
+  app.route('/api/user/events') // ?limit=(int)
+    .get(UserVerification, UserController.event_controller.eventAll);
+
+  app.route('/api/user/events/recommended') // RANDOM ?limit=(int)
+    .get(UserVerification, UserController.event_controller.eventRecommended);
+
+  app.route('/api/user/event/:id_event')
+    .get(UserVerification, UserController.event_controller.eventId);
+
+  // HISTORY CONTROLLER
+
 
 };
 
