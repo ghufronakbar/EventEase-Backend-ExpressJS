@@ -40,6 +40,14 @@ exports.orgShow = async (req, res) => {
             rows.forEach(row => {
                 const orgId = row.id_organization;
 
+                let base_url_google_map = "https://google.com/maps?q="
+                let url_google_map = ""
+                if(row.id_event){
+                    let query_google_map = row.location.split(" ").join("+")
+                    url_google_map = base_url_google_map + query_google_map;
+                }
+                
+
                 if (!organizations[orgId]) {
                     organizations[orgId] = {
                         id_organization: row.id_organization,
@@ -60,6 +68,7 @@ exports.orgShow = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
+                        url_google_map,
                         event_image: row.event_image,
                         site_plan_image: row.site_plan_image,
                         type: row.type,
@@ -102,6 +111,12 @@ exports.orgShowId = async (req, res) => {
 
             rows.forEach(row => {
                 const orgId = row.id_organization;
+               let base_url_google_map = "https://google.com/maps?q="
+                let url_google_map = ""
+                if(row.id_event){
+                    let query_google_map = row.location.split(" ").join("+")
+                    url_google_map = base_url_google_map + query_google_map;
+                }
 
                 if (!organizations[orgId]) {
                     organizations[orgId] = {
@@ -123,6 +138,7 @@ exports.orgShowId = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
+                        url_google_map,
                         event_image: row.event_image,
                         site_plan_image: row.site_plan_image,
                         type: row.type,

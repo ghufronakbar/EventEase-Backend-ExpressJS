@@ -64,8 +64,11 @@ exports.eventShow = async (req, res) => {
                 const eventEnd = new Date(row.event_end);
                 let event_status = "";
                 let base_url_google_map = "https://google.com/maps?q="
-                let query_google_map = row.location.split(" ").join("+")
-                const url_google_map = base_url_google_map + query_google_map;
+                let url_google_map = ""
+                if(row.id_event){
+                    let query_google_map = row.location.split(" ").join("+")
+                    url_google_map = base_url_google_map + query_google_map;
+                }
 
 
                 if (now > eventEnd) {
@@ -150,6 +153,13 @@ exports.eventShowId = async (req, res) => {
             rows.forEach(row => {
                 const eventId = row.id_event;
 
+                let base_url_google_map = "https://google.com/maps?q="
+                let url_google_map = ""
+                if(row.id_event){
+                    let query_google_map = row.location.split(" ").join("+")
+                    url_google_map = base_url_google_map + query_google_map;
+                }
+
                 if (!events[eventId]) {
                     events[eventId] = {
                         id_event: row.id_event,
@@ -158,6 +168,7 @@ exports.eventShowId = async (req, res) => {
                         event_name: row.event_name,
                         description: row.description,
                         location: row.location,
+                        url_google_map,
                         event_image: row.event_image,
                         event_image: row.event_image ? process.env.BASE_URL + `/images/event/` + row.event_image : null,
                         site_plan_image: row.site_plan_image ? process.env.BASE_URL + `/images/site-plan/` + row.site_plan_image : null,

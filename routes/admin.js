@@ -1,44 +1,42 @@
 "use strict";
 
-const verifikasiAdmin = require("../middleware/verifikasi-admin");
 
 module.exports = function (app) {
-  var api_admin = require("../controllers/admin");
-
+  const AdminController = require("../controllers/admin");
+  const AdminVerification = require("../middleware/verifikasi-admin");
 
   //LOGIN
   app.route(`/api/admin/login`)
-    .post(api_admin.account_controller.login);
-
+    .post(AdminController.account_controller.login);
 
   // ORGANIZATIONS
   app.route(`/api/admin/organizations`)
-    .get(verifikasiAdmin, api_admin.organization_controller.orgShow);
+    .get(AdminVerification, AdminController.organization_controller.orgShow);
 
   app.route(`/api/admin/organization/:id_organization`)
-    .get(verifikasiAdmin, api_admin.organization_controller.orgShowId);
+    .get(AdminVerification, AdminController.organization_controller.orgShowId);
 
   app.route(`/api/admin/organization/approve/:id_organization`)
-    .put(verifikasiAdmin, api_admin.organization_controller.orgApprove);
+    .put(AdminVerification, AdminController.organization_controller.orgApprove);
 
   app.route(`/api/admin/organization/banned/:id_organization`)
-    .put(verifikasiAdmin, api_admin.organization_controller.orgBanned);
+    .put(AdminVerification, AdminController.organization_controller.orgBanned);
 
   app.route(`/api/admin/organization/reject/:id_organization`)
-    .delete(verifikasiAdmin, api_admin.organization_controller.orgReject);
+    .delete(AdminVerification, AdminController.organization_controller.orgReject);
 
   // EVENTS
   app.route(`/api/admin/events`)
-    .get(verifikasiAdmin, api_admin.event_controller.eventShow);
+    .get(AdminVerification, AdminController.event_controller.eventShow);
 
   app.route(`/api/admin/event/:id_event`)
-    .get(verifikasiAdmin, api_admin.event_controller.eventShowId);
+    .get(AdminVerification, AdminController.event_controller.eventShowId);
 
   app.route(`/api/admin/event/reject/:id_event`)
-    .put(verifikasiAdmin, api_admin.event_controller.eventReject);
+    .put(AdminVerification, AdminController.event_controller.eventReject);
 
   app.route(`/api/admin/event/approve/:id_event`)
-    .put(verifikasiAdmin, api_admin.event_controller.eventApprove);
+    .put(AdminVerification, AdminController.event_controller.eventApprove);
 
 };
 

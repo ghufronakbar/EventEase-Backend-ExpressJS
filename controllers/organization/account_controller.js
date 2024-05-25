@@ -296,10 +296,7 @@ exports.editPassword = async (req, res) => {
     let old_password = md5(req.body.old_password);
     let new_password = md5(req.body.new_password);
     let id_organization = req.decoded.id_organization;
-
-    console.log(old_password)
-    console.log(new_password)
-    console.log(id_organization)
+    
     // Periksa old_password dengan melakukan SELECT query
     connection.query(`
         SELECT password FROM organizations WHERE id_organization = ?`,
