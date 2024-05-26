@@ -38,17 +38,23 @@ module.exports = function (app) {
     .get(UserVerification, UserController.history_controller.showHistory);
 
   app.route('/api/user/history/:id_history')
-    .get(UserVerification, UserController.history_controller.showHistoryId);  
+    .get(UserVerification, UserController.history_controller.showHistoryId);
 
 
   // ORDER CONTROLLER
-  // PUT MAKE ORDER => HISTORIES(AMOUNT) PAID = 0 (TOTAL = PRICE * AMOUNT + 3INT)
+  // POST MAKE ORDER => HISTORIES(AMOUNT) PAID = 0 (TOTAL = PRICE * AMOUNT + 3INT)
   // => RESPONSE PLEASE PAY IN 10 MINUTES
   // PUT CANCEL ORDER => SET PAID = 1
   // PUT CONFIRM ORDER => CHECK 10 MINUTES => SET T.SOLD += H.AMOUNT => SET PAID =2 => SET UNIQUE CODE => RESPONSE WAITING CONFIRM
-   
-  app.route('/api/user/order/:id_history')
-    .get(UserVerification, UserController.order_controller.showHistoryId); 
+
+  app.route('/api/user/order')
+    .post(UserVerification, UserController.order_controller.makeOrder);
+
+  app.route('/api/user/order/cancel/:id_history')
+    .put(UserVerification, UserController.order_controller.cancelOrder);
+
+  app.route('/api/user/order/confirm/:id_history')
+    .put(UserVerification, UserController.order_controller.confirmOrder);
 
 };
 
