@@ -103,7 +103,7 @@ exports.confirmOrder = async (req, res) => {
             return res.status(400).json({ status: 400, message: "No matching records found" });
         }
 
-        const { id_history, id_user, id_event, id_ticket, amount, datetime, sold, ticket_amount } = rows[0];
+        const { id_history, id_user, id_event, id_ticket, amount, datetime, sold, ticket_amount, id_organization } = rows[0];
 
         // Convert datetime from database to JavaScript Date object
         const dbDatetime = new Date(datetime);
@@ -134,15 +134,15 @@ exports.confirmOrder = async (req, res) => {
                         // Format datetime to YYYY-MM-DD
                         const formattedDatetime = dbDatetime.toISOString().split('T')[0];
 
-                        const unique_code = `${id_history}/${id_user}/${id_event}/${id_ticket}/${amount}/${formattedDatetime}`;
+                        const unique_code = `${id_history}/${id_user}/${id_organization}/${id_event}/${id_ticket}/${amount}/${formattedDatetime}`;
 
                         const qConfirmOrder = `
             UPDATE histories 
-            SET paid = 3, unique_code = ? 
+            SET paid = 3 
             WHERE id_history = ? 
               AND id_user = ?`;
 
-                        const vConfirmOrder = [unique_code, id_history, id_user];
+                        const vConfirmOrder = [id_history, id_user];
 
                         connection.query(qConfirmOrder, vConfirmOrder, (error, result) => {
                             if (error) {

@@ -10,18 +10,44 @@ var mysql = require('mysql');
 
 exports.handleConfirm = async (req, res) => {
     const { id_history } = req.params
-    const qHandleConfirm = `UPDATE histories SET paid=4 WHERE id_history=?`
 
-    await connection.query(qHandleConfirm, id_history,
+
+    const qGetEntries = `
+    SELECT h.*, t.id_event, t.sold,t.amount AS ticket_amount
+    FROM histories AS h 
+    JOIN tickets AS t ON h.id_ticket = t.id_ticket 
+    WHERE h.id_history = ?`;
+
+    connection.query(qGetEntries, id_history,
         (error, rows, result) => {
             if (error) {
                 console.log(error);
                 return res.status(500).json({ status: 500, message: "Internal Server Error" });
             } else {
-                return res.status(200).json({ status: 200, message: "Order confirmed" });
+                const { id_history, id_user, id_event, id_ticket, amount, datetime, sold, ticket_amount, id_organization } = rows[0];
+
+                const formattedDatetime = datetime.toISOString().split('T')[0];
+
+                const unique_code = `${id_history}/${id_user}/${id_organization}/${id_event}/${id_ticket}/${amount}/${formattedDatetime}`;
+
+                const qHandleConfirm = `UPDATE histories SET paid=4, unique_code=? WHERE id_history=?`
+
+                connection.query(qHandleConfirm, [unique_code, id_history],
+                    (error, rows, result) => {
+                        if (error) {
+                            console.log(error);
+                            return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                        } else {
+                            return res.status(200).json({ status: 200, message: "Order confirmed" });
+                        }
+                    }
+                )
+
             }
         }
     )
+
+
 }
 
 exports.handleAnomaly = async (req, res) => {
@@ -136,6 +162,4 @@ exports.handleScanTicket = async (req, res) => {
             }
         )
     }
-
-
 }

@@ -61,7 +61,7 @@ exports.eventShow = async (req, res) => {
     } else if (status == 2) {
         queryStatus = "AND e.status=2"
     }
-
+    
     const qEventShow = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
