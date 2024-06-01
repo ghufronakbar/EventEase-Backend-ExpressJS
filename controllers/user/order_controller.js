@@ -15,7 +15,7 @@ exports.makeOrder = async (req, res) => {
 
     if (!(id_ticket || amount)) {
         return res.status(400).json({ status: 400, message: "Field can't be blank" });
-    } else {        
+    } else {
         const qValidatePayment = `SELECT * FROM histories WHERE datetime > DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND paid=0 AND id_user=?`
         connection.query(qValidatePayment, id_user,
             (error, r, result) => {
@@ -49,7 +49,27 @@ exports.makeOrder = async (req, res) => {
                                                 if (error) {
                                                     return res.status(500).json({ status: 500, message: "Internal Server Error" });
                                                 } else {
-                                                    return res.status(200).json({ status: 200, message: `Order success, please pay Rp ${total} before 10 minutes!` });
+                                                    const qSelectSold = `SELECT sold FROM tickets WHERE id_ticket=?`
+                                                    connection.query(qSelectSold, id_ticket,
+                                                        (error, rows, result) => {
+                                                            if (error) {
+                                                                return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                                                            } else {
+                                                                const currentSold = rows[0].sold
+                                                                const updateSold = parseInt(currentSold) + parseInt(amount)
+                                                                const qUpdateSold = `UPDATE tickets SET sold=? WHERE id_ticket=?`
+                                                                connection.query(qUpdateSold, [updateSold, id_ticket],
+                                                                    (error, rows, result) => {
+                                                                        if (error) {
+                                                                            return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                                                                        } else {
+                                                                            return res.status(200).json({ status: 200, message: `Order success, please pay Rp ${total} before 10 minutes!` });
+                                                                        }
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                    )
                                                 }
                                             }
                                         )
@@ -68,17 +88,51 @@ exports.cancelOrder = async (req, res) => {
     const id_user = req.decoded.id_user
     const id_history = req.params.id_history
 
-    const qCancelOrder = `UPDATE histories SET paid=1 WHERE id_history=? AND id_user=?`
-
-    connection.query(qCancelOrder, [id_history, id_user],
+    const qGetAmountIdTicket = `SELECT amount,id_ticket FROM histories WHERE id_history=?`
+    connection.query(qGetAmountIdTicket, id_history,
         (error, rows, result) => {
             if (error) {
+                console.log(error)
                 return res.status(500).json({ status: 500, message: "Internal Server Error" });
             } else {
-                return res.status(200).json({ status: 200, message: `Cancel order success` });
+                const { amount, id_ticket } = rows[0]
+                const qGetSold = `SELECT sold FROM tickets WHERE id_ticket=?`
+                connection.query(qGetSold, id_ticket,
+                    (error, rows, result) => {
+                        if (error) {
+                            console.log(error)
+                            return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                        } else {
+                            const { sold } = rows[0]
+                            const updateSold = parseInt(sold) - parseInt(amount)
+                            const qUpdateSold = `UPDATE tickets SET sold=? WHERE id_ticket=?`
+                            connection.query(qUpdateSold,[updateSold,id_ticket],
+                                (error, rows, result) => {
+                                    if (error) {
+                                        console.log(error)
+                                        return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                                    } else {
+                                        const qCancelOrder = `UPDATE histories SET paid=1 WHERE id_history=? AND id_user=?`                                    
+                                        connection.query(qCancelOrder, [id_history, id_user],
+                                            (error, rows, result) => {
+                                                if (error) {
+                                                    console.log(error)
+                                                    return res.status(500).json({ status: 500, message: "Internal Server Error" });
+                                                } else {
+                                                    return res.status(200).json({ status: 200, message: `Cancel order success` });
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+                )
             }
         }
     )
+
 }
 
 
@@ -119,41 +173,28 @@ exports.confirmOrder = async (req, res) => {
             return res.status(400).json({ status: 400, message: "Payment time has expired" });
         }
 
-        if (ticket_amount - sold < amount) {
-            return res.status(400).json({ status: 400, message: "Sorry, your purchase exceeded the total available. Maybe it's because you got ahead of someone else" });
-        } else {
-            const vSold = parseInt(sold + amount)
-            const qUpdateSold = `UPDATE tickets SET sold=? WHERE id_ticket=?`
-            const vUpdateSold = [vSold, id_ticket]
-            connection.query(qUpdateSold, vUpdateSold,
-                (error, rows, result) => {
-                    if (error) {
-                        console.error('Database query error:', error);
-                        return res.status(500).json({ status: 500, message: "Internal Server Error" });
-                    } else {
-                        // Format datetime to YYYY-MM-DD
-                        const formattedDatetime = dbDatetime.toISOString().split('T')[0];
+        // Format datetime to YYYY-MM-DD
+        const formattedDatetime = dbDatetime.toISOString().split('T')[0];
 
-                        const unique_code = `${id_history}/${id_user}/${id_organization}/${id_event}/${id_ticket}/${amount}/${formattedDatetime}`;
+        const unique_code = `${id_history}/${id_user}/${id_organization}/${id_event}/${id_ticket}/${amount}/${formattedDatetime}`;
 
-                        const qConfirmOrder = `
+        const qConfirmOrder = `
             UPDATE histories 
             SET paid = 3 
             WHERE id_history = ? 
               AND id_user = ?`;
 
-                        const vConfirmOrder = [id_history, id_user];
+        const vConfirmOrder = [id_history, id_user];
 
-                        connection.query(qConfirmOrder, vConfirmOrder, (error, result) => {
-                            if (error) {
-                                console.error('Database update error:', error);
-                                return res.status(500).json({ status: 500, message: "Internal Server Error" });
-                            }
-                            return res.status(200).json({ status: 200, message: `Confirm order success, please wait for confirmation` });
-                        });
-                    }
-                }
-            )
-        }
+        connection.query(qConfirmOrder, vConfirmOrder, (error, result) => {
+            if (error) {
+                console.error('Database update error:', error);
+                return res.status(500).json({ status: 500, message: "Internal Server Error" });
+            }
+            return res.status(200).json({ status: 200, message: `Confirm order success, please wait for confirmation` });
+        });
+
+
+
     });
 };
