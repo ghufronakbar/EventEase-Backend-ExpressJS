@@ -8,7 +8,6 @@ exports.showHistory = async (req, res) => {
 
     // Membuat bagian dari query tergantung apakah 'paid' disediakan atau tidak
     const queryPaid = paid !== undefined ? ` AND h.paid=${paid}` : "";
-
     // Query untuk mendapatkan histories yang perlu diperbarui
     const qSelectTimeOut = `
         SELECT id_history, amount, id_ticket 
@@ -104,7 +103,6 @@ exports.showHistoryId = async (req, res) => {
 
     const id_user = req.decoded.id_user;
     const { id_history } = req.params
-  
 
   
     const qSelectTimeOut = `
@@ -155,19 +153,21 @@ exports.showHistoryId = async (req, res) => {
                     .then(() => {
                         // Query untuk menampilkan history
                         const qShowHistory = `
-                            SELECT h.id_history, h.event_name, h.type_ticket, h.price, h.amount,
-                                   h.total, h.unique_code, h.paid, h.used, h.datetime,
-                                   u.fullname, u.email, u.phone
-                            FROM histories AS h 
-                            JOIN users AS u ON h.id_user = u.id_user
-                            WHERE h.id_user=? AND h.id_history=?`;
+                        SELECT h.id_history, h.event_name, h.type_ticket, h.price, h.amount,
+                       h.total, h.unique_code, h.paid, h.used, h.datetime,
+                       u.fullname, u.email, u.phone, e.payment_information
+                FROM histories AS h 
+                JOIN users AS u ON h.id_user = u.id_user
+                JOIN tickets AS t ON h.id_ticket = t.id_ticket
+                JOIN events AS e ON t.id_event = e.id_event
+                WHERE h.id_user=? AND h.id_history=?`;
 
                         connection.query(qShowHistory, [id_user,id_history], (error, rows) => {
                             if (error) {
                                 console.log(error);
                                 return res.status(500).json({ status: 500, message: "Internal Server Error" });
                             }
-                            return res.status(200).json(rows);
+                            return res.status(200).json(rows[0]);
                         });
                     })
                     .catch(error => {
@@ -178,19 +178,21 @@ exports.showHistoryId = async (req, res) => {
         } else {
             // Jika tidak ada history yang perlu diperbarui, langsung tampilkan history
             const qShowHistory = `
-                SELECT h.id_history, h.event_name, h.type_ticket, h.price, h.amount,
-                       h.total, h.unique_code, h.paid, h.used, h.datetime,
-                       u.fullname, u.email, u.phone
-                FROM histories AS h 
-                JOIN users AS u ON h.id_user = u.id_user
-                WHERE h.id_user=? AND h.id_history=?`;
+                            SELECT h.id_history, h.event_name, h.type_ticket, h.price, h.amount,
+                            h.total, h.unique_code, h.paid, h.used, h.datetime,
+                            u.fullname, u.email, u.phone, e.payment_information
+                            FROM histories AS h 
+                            JOIN users AS u ON h.id_user = u.id_user
+                            JOIN tickets AS t ON h.id_ticket = t.id_ticket
+                            JOIN events AS e ON t.id_event = e.id_event
+                            WHERE h.id_user=? AND h.id_history=?`;
 
             connection.query(qShowHistory, [id_user,id_history], (error, rows) => {
                 if (error) {
                     console.log(error);
                     return res.status(500).json({ status: 500, message: "Internal Server Error" });
                 }
-                return res.status(200).json(rows);
+                return res.status(200).json(rows[0]);
             });
         }
     });

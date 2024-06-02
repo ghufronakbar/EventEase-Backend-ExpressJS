@@ -36,6 +36,7 @@ module.exports = function (app) {
     .route("/api/user/event/:id_event")
     .get(UserVerification, UserController.event_controller.eventId);
 
+
   // HISTORY CONTROLLER
   app
     .route("/api/user/histories") // ?paid=(int)
