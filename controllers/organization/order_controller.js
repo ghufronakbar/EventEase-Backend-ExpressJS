@@ -127,22 +127,22 @@ exports.handleScanTicket = async (req, res) => {
                     return res.status(500).json({ status: 500, message: "Internal Server Error" });
                 } else {
                     if (rows.length == 0) {
-                        return res.status(401).json({ status: 401, message: "There's no order exist" });
+                        return res.status(400).json({ status: 400, message: "There's no order exist" });
                     }
                     const vIdOrganization = rows[0].id_organization
                     const vUsed = rows[0].used
                     const vPaid = rows[0].paid
                     const vUniqueCode = rows[0].unique_code
                     if (vUniqueCode != unique_code) {
-                        return res.status(401).json({ status: 401, message: "There's no unique code exist" });
+                        return res.status(400).json({ status: 400, message: "There's no unique code exist" });
                     } else if (dIdOrganization != id_organization) {
-                        return res.status(401).json({ status: 401, message: "You are not allowed to scan tickets that are not your event" });
+                        return res.status(400).json({ status: 400, message: "You are not allowed to scan tickets that are not your event" });
                     } else if (dIdOrganization == vIdOrganization) {
                         if (vPaid != 4) {
-                            return res.status(401).json({ status: 401, message: "Tickets have not been paid for and confirmed" });
+                            return res.status(400).json({ status: 400, message: "Tickets have not been paid for and confirmed" });
                         } else if (vPaid == 4) {
                             if (vUsed == 1) {
-                                return res.status(401).json({ status: 401, message: "Tickets have already been used" });
+                                return res.status(400).json({ status: 400, message: "Tickets have already been used" });
                             } else if (vUsed != 1) {
                                 const qSetUsed = `UPDATE histories SET used=1 WHERE id_history=?`
                                 connection.query(qSetUsed, dIdHistory,
