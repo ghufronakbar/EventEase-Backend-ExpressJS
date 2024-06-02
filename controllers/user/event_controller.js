@@ -1,11 +1,6 @@
 "use strict";
 
-const response = require("../../res");
 const connection = require("../../connection");
-const md5 = require("md5");
-const jwt = require("jsonwebtoken");
-const config = require("../../config/secret");
-const ip = require("ip");
 
 exports.eventAll = async (req, res) => {
   const { limit } = req.query;
