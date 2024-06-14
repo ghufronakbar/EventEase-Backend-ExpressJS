@@ -1,13 +1,6 @@
 "use strict";
 
-const response = require("../../res");
 const connection = require("../../connection");
-const md5 = require("md5");
-const jwt = require("jsonwebtoken");
-const config = require("../../config/secret");
-const ip = require("ip");
-
-// return res.status(500).json({ status: 500, message: "Internal Server Error" });
 
 exports.makeOrder = async (req, res) => {
     const id_user = req.decoded.id_user;
@@ -34,7 +27,10 @@ exports.makeOrder = async (req, res) => {
                 message: "Please pay the previous pending payment",
               });
           } else {
-            const qValidateTicket = `SELECT * FROM tickets JOIN events WHERE tickets.id_event = events.id_event AND tickets.id_ticket=?`;
+            const qValidateTicket = `SELECT e.id_organization, e.event_name, t.type, t.price, t.amount, t.sold 
+                                    FROM tickets AS t JOIN events AS e
+                                    WHERE t.id_event = e.id_event 
+                                    AND t.id_ticket=?`;
             connection.query(qValidateTicket, id_ticket, (error, rows) => {
               if (error) {
                 console.log("Error in qValidateTicket:", error);

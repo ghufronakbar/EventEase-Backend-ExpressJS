@@ -1,12 +1,7 @@
 'use strict';
 
-var response = require('../../res');
-var connection = require('../../connection');
-var md5 = require('md5');
-var ip = require('ip');
-var config = require('../../config/secret')
-var jwt = require('jsonwebtoken');
-var mysql = require('mysql');
+const connection = require('../../connection');
+
 exports.showHistory = async (req, res) => {
     const id_organization = req.decoded.id_organization;
     const { paid } = req.query;
