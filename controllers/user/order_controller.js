@@ -3,137 +3,135 @@
 const connection = require("../../connection");
 
 exports.makeOrder = async (req, res) => {
-    const id_user = req.decoded.id_user;
-    const { id_ticket, amount } = req.body;
-  
-    if (!(id_ticket && amount)) {
-      return res
-        .status(400)
-        .json({ status: 400, message: "Field can't be blank" });
-    } else {
-      const qValidatePayment = `SELECT * FROM histories WHERE datetime > DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND paid=0 AND id_user=?`;
-      connection.query(qValidatePayment, id_user, (error, r) => {
-        if (error) {
-          console.log("Error in qValidatePayment:", error);
+  const id_user = req.decoded.id_user;
+  const { id_ticket, amount } = req.body;
+
+  if (!(id_ticket && amount)) {
+    return res.status(400).json({ status: 400, message: "Field can't be blank" });
+  } else {
+    const qValidatePayment = `SELECT * FROM histories WHERE datetime > DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND paid=0 AND id_user=?`;
+    connection.query(qValidatePayment, id_user, (error, r) => {
+      if (error) {
+        console.log("Error in qValidatePayment:", error);
+        return res
+          .status(500)
+          .json({ status: 500, message: "Internal Server Error" });
+      } else {
+        if (r.length > 0) {
           return res
-            .status(500)
-            .json({ status: 500, message: "Internal Server Error" });
+            .status(400)
+            .json({
+              status: 400,
+              message: "Please pay the previous pending payment",
+            });
         } else {
-          if (r.length > 0) {
-            return res
-              .status(400)
-              .json({
-                status: 400,
-                message: "Please pay the previous pending payment",
-              });
-          } else {
-            const qValidateTicket = `SELECT e.id_organization, e.event_name, t.type, t.price, t.amount, t.sold 
+          const qValidateTicket = `SELECT e.id_organization, e.event_name, t.type, t.price, t.amount, t.sold 
                                     FROM tickets AS t JOIN events AS e
                                     WHERE t.id_event = e.id_event 
                                     AND t.id_ticket=?`;
-            connection.query(qValidateTicket, id_ticket, (error, rows) => {
-              if (error) {
-                console.log("Error in qValidateTicket:", error);
+          connection.query(qValidateTicket, id_ticket, (error, rows) => {
+            if (error) {
+              console.log("Error in qValidateTicket:", error);
+              return res
+                .status(500)
+                .json({ status: 500, message: "Internal Server Error" });
+            } else {
+              if (rows.length === 0) {
                 return res
-                  .status(500)
-                  .json({ status: 500, message: "Internal Server Error" });
+                  .status(404)
+                  .json({ status: 404, message: "Ticket not found" });
+              }
+
+              const validateAmount = rows[0].amount - rows[0].sold;
+              const { id_organization, event_name, type, price } = rows[0];
+              const random = Math.floor(Math.random() * 100);
+              const total = parseInt(price) * parseInt(amount) + random;
+
+              if (amount > validateAmount) {
+                return res
+                  .status(400)
+                  .json({
+                    status: 400,
+                    message: "Can't checkout more than available amount",
+                  });
               } else {
-                if (rows.length === 0) {
-                  return res
-                    .status(404)
-                    .json({ status: 404, message: "Ticket not found" });
-                }
-  
-                const validateAmount = rows[0].amount - rows[0].sold;
-                const { id_organization, event_name, type, price } = rows[0];
-                const random = Math.floor(Math.random() * 100);
-                const total = parseInt(price) * parseInt(amount) + random;
-  
-                if (amount > validateAmount) {
-                  return res
-                    .status(400)
-                    .json({
-                      status: 400,
-                      message: "Can't checkout more than available amount",
-                    });
-                } else {
-                  const qInsertHistory = `INSERT INTO histories
+                const qInsertHistory = `INSERT INTO histories
                                           (id_organization, id_user, id_ticket, event_name, type_ticket, price, amount, total, datetime)
                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-                  const vInsertHistory = [
-                    id_organization,
-                    id_user,
-                    id_ticket,
-                    event_name,
-                    type,
-                    price,
-                    amount,
-                    total,
-                    new Date(),
-                  ];
-  
-                  connection.query(qInsertHistory, vInsertHistory, (error, result) => {
-                    if (error) {
-                      console.log("Error in qInsertHistory:", error);
+                const vInsertHistory = [
+                  id_organization,
+                  id_user,
+                  id_ticket,
+                  event_name,
+                  type,
+                  price,
+                  amount,
+                  total,
+                  new Date(),
+                ];
+
+                connection.query(qInsertHistory, vInsertHistory, (error, result) => {
+                  if (error) {
+                    console.log("Error in qInsertHistory:", error);
+                    return res
+                      .status(500)
+                      .json({ status: 500, message: "Internal Server Error" });
+                  } else {
+                    if (!result) {
+                      console.log("No result from qInsertHistory");
                       return res
                         .status(500)
                         .json({ status: 500, message: "Internal Server Error" });
-                    } else {
-                      if (!result) {
-                        console.log("No result from qInsertHistory");
+                    }
+
+                    const id_histories = result.insertId;
+
+                    const qSelectSold = `SELECT sold FROM tickets WHERE id_ticket=?`;
+                    connection.query(qSelectSold, id_ticket, (error, rows) => {
+                      if (error) {
+                        console.log("Error in qSelectSold:", error);
                         return res
                           .status(500)
                           .json({ status: 500, message: "Internal Server Error" });
-                      }
-  
-                      const id_histories = result.insertId;
-  
-                      const qSelectSold = `SELECT sold FROM tickets WHERE id_ticket=?`;
-                      connection.query(qSelectSold, id_ticket, (error, rows) => {
-                        if (error) {
-                          console.log("Error in qSelectSold:", error);
+                      } else {
+                        if (rows.length === 0) {
                           return res
-                            .status(500)
-                            .json({ status: 500, message: "Internal Server Error" });
-                        } else {
-                          if (rows.length === 0) {
-                            return res
-                              .status(404)
-                              .json({ status: 404, message: "Ticket not found" });
-                          }
-  
-                          const currentSold = rows[0].sold;
-                          const updateSold = parseInt(currentSold) + parseInt(amount);
-                          const qUpdateSold = `UPDATE tickets SET sold=? WHERE id_ticket=?`;
-                          connection.query(qUpdateSold, [updateSold, id_ticket], (error) => {
-                            if (error) {
-                              console.log("Error in qUpdateSold:", error);
-                              return res
-                                .status(500)
-                                .json({ status: 500, message: "Internal Server Error" });
-                            } else {
-                              return res
-                                .status(200)
-                                .json({
-                                  status: 200,
-                                  id_histories: id_histories,
-                                  message: `Order success, please pay Rp ${total} before 10 minutes!`,
-                                });
-                            }
-                          });
+                            .status(404)
+                            .json({ status: 404, message: "Ticket not found" });
                         }
-                      });
-                    }
-                  });
-                }
+
+                        const currentSold = rows[0].sold;
+                        const updateSold = parseInt(currentSold) + parseInt(amount);
+                        const qUpdateSold = `UPDATE tickets SET sold=? WHERE id_ticket=?`;
+                        connection.query(qUpdateSold, [updateSold, id_ticket], (error) => {
+                          if (error) {
+                            console.log("Error in qUpdateSold:", error);
+                            return res
+                              .status(500)
+                              .json({ status: 500, message: "Internal Server Error" });
+                          } else {
+                            return res
+                              .status(200)
+                              .json({
+                                status: 200,
+                                id_histories: id_histories,
+                                message: `Order success, please pay Rp ${total} before 10 minutes!`,
+                              });
+                          }
+                        });
+                      }
+                    });
+                  }
+                });
               }
-            });
-          }
+            }
+          });
         }
-      });
-    }
-  };
-  
+      }
+    });
+  }
+};
+
 
 exports.cancelOrder = async (req, res) => {
   const id_user = req.decoded.id_user;
