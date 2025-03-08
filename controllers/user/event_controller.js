@@ -18,7 +18,7 @@ exports.eventAll = async (req, res) => {
   SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, event_image,
          e.type AS event_type, e.event_start, e.event_end FROM events AS e
          LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-         WHERE e.event_end > CURDATE() AND e.status=1 ${qLimit}`;
+         WHERE e.event_end > CURDATE() AND e.status=2 ${qLimit}`;
 
   connection.query(qEventShow, function (error, eventRows) {
     if (error) {
@@ -86,7 +86,7 @@ FROM (
     FROM events AS e
     LEFT JOIN tickets AS t ON e.id_event = t.id_event
     LEFT JOIN organizations AS o ON e.id_organization = o.id_organization
-    WHERE e.event_end > CURDATE() AND e.status=1
+    WHERE e.event_end > CURDATE() AND e.status=2
     GROUP BY e.id_event, e.id_organization, o.organization_name, e.event_name, e.event_image,
              e.type, e.event_start, e.event_end, e.created_at
 ) AS event_data
