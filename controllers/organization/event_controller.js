@@ -55,7 +55,7 @@ exports.eventShow = async (req, res) => {
     } else if (status == 2) {
         queryStatus = "AND e.status=2"
     }
-    
+
     const qEventShow = `
         SELECT e.id_event, e.id_organization, o.organization_name, e.event_name, e.description, e.location,
                e.event_image, e.site_plan_image, e.type AS event_type, e.status, e.payment_information,
@@ -262,7 +262,7 @@ exports.eventAdd = async (req, res) => {
                 return res.status(400).json({ status: 400, message: "Field can't be blank!" });
             } else {
                 const qEventAdd = `INSERT INTO events(id_organization,event_name,description,location,event_image,site_plan_image,type,status,payment_information,event_start,event_end,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`;
-                const vEventAdd = [id_organization, event_name, description, location, event_image, site_plan_image, type, status, payment_information, event_start, event_end, datetimenow];
+                const vEventAdd = [id_organization, event_name, description, location, event_image, site_plan_image, type, status, payment_information, new Date(event_start), new Date(event_end), datetimenow];
                 connection.query(qEventAdd, vEventAdd, function (error) {
                     if (error) {
                         console.log(error);
