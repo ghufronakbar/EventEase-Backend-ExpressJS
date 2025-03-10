@@ -308,7 +308,7 @@ exports.eventEdit = async (req, res) => {
                     const oldSitePlanImage = rows[0].site_plan_image;
 
                     let updateQuery = `UPDATE events SET event_name = ?, description = ?, location = ?, type = ?, payment_information = ?, event_start = ?, event_end = ?`;
-                    let updateValues = [event_name, description, location, type, payment_information, event_start, event_end];
+                    let updateValues = [event_name, description, location, type, payment_information, new Date(event_start), new Date(event_end)];
 
                     if (event_image) {
                         updateQuery += `, event_image = ?`;
